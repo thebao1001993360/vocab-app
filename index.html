@@ -346,6 +346,37 @@
                 let unitsHtml = mod.units ? mod.units.map(u => `
                     <div class="flex justify-between items-center py-2 border-b last:border-0">
                         <span class="text-sm font-medium text-gray-700">${u.title}</span>
+                        <div class="space-x-1 flex items-center">
+                            <button onclick="router.goStudy('${mod.id}', '${u.id}')" class="text-xs bg-indigo-50 text-indigo-600 px-3 py-1 rounded-md font-semibold hover:bg-indigo-100">Học ngay</button>
+                            ${userRole === 'admin' ? `
+                                <button onclick="editUnitTitle('${mod.id}', '${u.id}', '${u.title.replace(/'/g, "\\'")}')" class="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-md hover:bg-gray-200" title="Sửa tên Unit"><i class="fa-solid fa-pen"></i></button>
+                                <button onclick="openVocabModal('${mod.id}', '${u.id}')" class="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-md hover:bg-gray-200" title="Quản lý từ vựng"><i class="fa-solid fa-gear"></i></button>
+                            ` : ''}
+                        </div>
+                    </div>
+                `).join('') : '<p class="text-xs text-gray-400 py-2">Chưa có unit nào.</p>';
+
+                container.innerHTML += `
+                    <div class="bg-white rounded-xl shadow-md p-5 space-y-4 border">
+                        <div class="flex justify-between items-start">
+                            <div class="flex items-center space-x-2">
+                                <h3 class="font-bold text-lg text-gray-800">${mod.title}</h3>
+                                ${userRole === 'admin' ? `<button onclick="editModuleTitle('${mod.id}', '${mod.title.replace(/'/g, "\\'")}')" class="text-xs text-gray-400 hover:text-indigo-600" title="Sửa tên học phần"><i class="fa-solid fa-pen"></i></button>` : ''}
+                            </div>
+                            ${userRole === 'admin' ? `<button onclick="addUnitToModule('${mod.id}')" class="text-xs bg-emerald-50 text-emerald-600 px-2.5 py-1 rounded-md font-semibold hover:bg-emerald-100">+ Thêm Unit</button>` : ''}
+                        </div>
+                        <div class="space-y-1">${unitsHtml}</div>
+                    </div>
+                `;
+            });
+
+            document.getElementById('admin-action-bar').classList.toggle('hidden', userRole !== 'admin');
+        }
+
+            window.appData.modules.forEach(mod => {
+                let unitsHtml = mod.units ? mod.units.map(u => `
+                    <div class="flex justify-between items-center py-2 border-b last:border-0">
+                        <span class="text-sm font-medium text-gray-700">${u.title}</span>
                         <div class="space-x-2">
                             <button onclick="router.goStudy('${mod.id}', '${u.id}')" class="text-xs bg-indigo-50 text-indigo-600 px-3 py-1 rounded-md font-semibold hover:bg-indigo-100">Học ngay</button>
                             ${userRole === 'admin' ? `<button onclick="openVocabModal('${mod.id}', '${u.id}')" class="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-md hover:bg-gray-200"><i class="fa-solid fa-gear"></i></button>` : ''}
