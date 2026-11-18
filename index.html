@@ -375,6 +375,28 @@
             loadModules();
         }
 
+        // --- HÀM ĐỔI TÊN HỌC PHẦN & UNIT ---
+        window.editModuleTitle = async function(moduleId, currentTitle) {
+            const newTitle = prompt("Nhập tên mới cho học phần:", currentTitle);
+            if (!newTitle || newTitle.trim() === "" || newTitle === currentTitle) return;
+            
+            const mod = window.appData.modules.find(m => m.id === moduleId);
+            await setDoc(doc(db, "modules", moduleId), { title: newTitle.trim(), units: mod.units || [] });
+            loadModules();
+        }
+
+        window.editUnitTitle = async function(moduleId, unitId, currentTitle) {
+            const newTitle = prompt("Nhập tên mới cho Unit:", currentTitle);
+            if (!newTitle || newTitle.trim() === "" || newTitle === currentTitle) return;
+
+            const mod = window.appData.modules.find(m => m.id === moduleId);
+            const unit = mod.units.find(u => u.id === unitId);
+            unit.title = newTitle.trim();
+
+            await setDoc(doc(db, "modules", moduleId), { title: mod.title, units: mod.units });
+            loadModules();
+        }
+
         window.addUnitToModule = async function(moduleId) {
             const title = prompt("Nhập tên Unit mới (Ví dụ: Unit 1: Environment):");
             if (!title) return;
