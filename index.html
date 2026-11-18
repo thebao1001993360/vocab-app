@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ Thống Ôn Tập Từ Vựng Thông Minh</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .perspective-1000 { perspective: 1000px; }
+        .transform-style-3d { transform-style: preserve-3d; }
+        .backface-hidden { backface-visibility: hidden; }
+        .rotate-y-180 { transform: rotateY(180deg); }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 min-h-screen flex flex-col">
+
+    <!-- Navbar -->
+    <header class="bg-indigo-600 text-white shadow-md">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center space-x-3 cursor-pointer" onclick="router.goHome()">
+                <i class="fa-solid fa-graduation-cap text-2xl"></i>
+                <span class="font-bold text-lg">VocabMaster Pro</span>
+            </div>
+            <div id="auth-nav" class="flex items-center space-x-4">
+                <!-- Sẽ được render bởi JS dựa trên trạng thái đăng nhập -->
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 py-6">
+        
+        <!-- 1. AUTH SCREEN -->
+        <div id="view-auth" class="max-w-md mx-auto bg-white rounded-xl shadow-lg p-8 mt-10">
+            <div class="text-center mb-6">
+                <h2 id="auth-title" class="text-2xl font-bold text-gray-900">Đăng Nhập Hệ Thống</h2>
+                <p class="text-sm text-gray-500 mt-1">Học tập hiệu quả - Theo dõi tiến độ chuẩn xác</p>
+            </div>
+            <form id="auth-form" onsubmit="handleAuth(event)" class="space-y-4">
+                <div id="name-field" class="hidden">
+                    <label class="block text-sm font-medium text-gray-700">Họ và tên</label>
+                    <input type="text" id="input-name" class="w-full mt-1 px-3 py-2 border rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Email</label>
+                    <input type="email" id="input-email" required class="w-full mt-1 px-3 py-2 border rounded-lg focus:ring-indigo-500 focus:border-indigo-500" placeholder="name@example.com">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Mật khẩu</label>
+                    <input type="password" id="input-password" required class="w-full mt-1 px-3 py-2 border rounded-lg focus:ring-indigo-500 focus:border-indigo-500" placeholder="••••••••">
+                </div>
+                <button type="submit" id="auth-btn" class="w-full bg-indigo-600 text-white py-2 rounded-lg font-semibold hover:bg-indigo-700 transition">Đăng Nhập</button>
+            </form>
+            <div class="mt-4 text-center text-sm">
+                <span id="auth-switch-text" class="text-gray-600">Chưa có tài khoản?</span>
+                <button onclick="toggleAuthMode()" id="auth-switch-btn" class="text-indigo-600 font-semibold ml-1 hover:underline">Đăng ký ngay</button>
+            </div>
+        </div>
+
+        <!-- 2. DASHBOARD (MODULES / UNITS) -->
+        <div id="view-dashboard" class="hidden space-y-6">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h1 id="welcome-user" class="text-2xl font-bold text-gray-900">Xin chào, ...</h1>
+                    <p class="text-sm text-gray-500">Chọn học phần và unit để bắt đầu ôn tập</p>
+                </div>
+                <div id="admin-action-bar" class="hidden">
+                    <button onclick="openModuleModal()" class="bg-emerald-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-emerald-700 transition">
+                        <i class="fa-solid fa-plus mr-2"></i>Thêm Học Phần
+                    </button>
+                </div>
+            </div>
+
+            <!-- Danh sách Học phần & Unit -->
+            <div id="modules-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Render bởi JS -->
+            </div>
+        </div>
+
+        <!-- 3. STUDY & PRACTICE VIEW (FLASHCARD & QUIZ) -->
+        <div id="view-study" class="hidden space-y-6 max-w-3xl mx-auto">
+            <div class="flex items-center justify-between">
+                <button onclick="router.goDashboard()" class="text-indigo-600 font-medium hover:underline">
+                    <i class="fa-solid fa-arrow-left mr-2"></i>Quay lại danh sách
+                </button>
+                <h2 id="study-title" class="text-xl font-bold text-gray-900">Tên Unit</h2>
+                <div class="space-x-2">
+                    <button onclick="switchStudyMode('flashcard')" id="tab-fc" class="px-3 py-1.5 rounded-lg text-sm font-medium bg-indigo-600 text-white">Flashcard</button>
+                    <button onclick="switchStudyMode('quiz')" id="tab-qz" class="px-3 py-1.5 rounded-lg text-sm font-medium bg-gray-200 text-gray-700">Trắc nghiệm</button>
+                </div>
+            </div>
+
+            <!-- Flashcard Mode -->
+            <div id="mode-flashcard" class="space-y-4">
+                <div class="perspective-1000 w-full h-80 cursor-pointer" onclick="flipCard()">
+                    <div id="flashcard-inner" class="relative w-full h-full duration-500 transform-style-3d shadow-xl rounded-2xl bg-white border">
+                        <!-- Mặt trước -->
+                        <div class="absolute inset-0 backface-hidden flex flex-col items-center justify-center p-6 text-center">
+                            <span id="fc-word" class="text-4xl font-bold text-indigo-600">Word</span>
+                            <span id="fc-type" class="text-sm text-gray-400 mt-2 italic">(noun)</span>
+                            <button onclick="event.stopPropagation(); speakCurrentWord()" class="mt-4 p-3 bg-indigo-50 text-indigo-600 rounded-full hover:bg-indigo-100">
+                                <i class="fa-solid fa-volume-high text-xl"></i>
+                            </button>
+                            <span class="absolute bottom-4 text-xs text-gray-400">Nhấp để lật thẻ</span>
+                        </div>
+                        <!-- Mặt sau -->
+                        <div class="absolute inset-0 backface-hidden rotate-y-180 flex flex-col items-center justify-center p-6 text-center bg-indigo-50 rounded-2xl">
+                            <span id="fc-meaning" class="text-2xl font-bold text-gray-900">Nghĩa của từ</span>
+                            <p id="fc-example" class="text-sm text-gray-600 mt-3 italic">Ví dụ minh họa...</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex justify-between items-center px-4">
+                    <button onclick="prevCard()" class="px-4 py-2 bg-white border rounded-lg shadow-sm hover:bg-gray-100 font-medium">Trước</button>
+                    <span id="fc-counter" class="text-sm font-medium text-gray-500">1 / 10</span>
+                    <button onclick="nextCard()" class="px-4 py-2 bg-white border rounded-lg shadow-sm hover:bg-gray-100 font-medium">Sau</button>
+                </div>
+            </div>
+
+            <!-- Quiz Mode -->
+            <div id="mode-quiz" class="hidden bg-white p-6 rounded-2xl shadow-md space-y-6">
+                <div class="flex justify-between text-sm text-gray-500 font-medium">
+                    <span id="quiz-progress">Câu hỏi 1/5</span>
+                    <span id="quiz-score">Điểm: 0</span>
+                </div>
+                <div id="quiz-question-box" class="space-y-4">
+                    <h3 id="quiz-q" class="text-xl font-bold text-gray-900 text-center">Nghĩa của từ này là gì?</h3>
+                    <div id="quiz-options" class="grid grid-cols-1 gap-3">
+                        <!-- Render options -->
+                    </div>
+                </div>
+                <div id="quiz-result-box" class="hidden text-center space-y-4 py-8">
+                    <i class="fa-solid fa-trophy text-5xl text-yellow-500"></i>
+                    <h3 class="text-2xl font-bold">Hoàn thành bài kiểm tra!</h3>
+                    <p id="quiz-final-score" class="text-lg text-gray-600">Bạn đạt 5/5 điểm.</p>
+                    <button onclick="restartQuiz()" class="px-6 py-2 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700">Làm lại</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. ADMIN & TEACHER TRACKING VIEW -->
+        <div id="view-admin" class="hidden space-y-6">
+            <div class="flex justify-between items-center">
+                <h1 class="text-2xl font-bold text-gray-900"><i class="fa-solid fa-shield-halved mr-2 text-indigo-600"></i>Bảng Quản Trị & Theo Dõi Học Sinh</h1>
+                <button onclick="router.goDashboard()" class="text-indigo-600 font-medium hover:underline">Quay lại trang học</button>
+            </div>
+            
+            <!-- Danh sách tiến độ học sinh -->
+            <div class="bg-white rounded-xl shadow-md p-6 space-y-4">
+                <h3 class="text-lg font-bold text-gray-800">Tiến độ học tập & Điểm kiểm tra của Học sinh</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="border-b bg-gray-50 text-xs font-semibold text-gray-500 uppercase">
+                                <th class="p-3">Học sinh</th>
+                                <th class="p-3">Email</th>
+                                <th class="p-3">Unit hoàn thành</th>
+                                <th class="p-3">Điểm quiz gần nhất</th>
+                                <th class="p-3">Cập nhật lần cuối</th>
+                            </tr>
+                        </thead>
+                        <tbody id="student-progress-table" class="text-sm divide-y">
+                            <!-- Render bởi JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- MODAL QUẢN TRỊ UNIT & VOCAB -->
+    <div id="modal-vocab" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-2xl max-w-2xl w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-pb">
+                <h3 id="modal-title" class="text-xl font-bold">Quản lý Từ vựng trong Unit</h3>
+                <button onclick="closeVocabModal()" class="text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark text-xl"></i></button>
+            </div>
+            <div id="vocab-list-admin" class="space-y-3">
+                <!-- Danh sách từ trong unit -->
+            </div>
+            <div class="border-t pt-4 space-y-3">
+                <h4 class="font-semibold text-sm text-gray-700">Thêm từ vựng mới</h4>
+                <div class="grid grid-cols-2 gap-3">
+                    <input type="text" id="new-word" placeholder="Từ vựng (ví dụ: apple)" class="px-3 py-2 border rounded-lg text-sm">
+                    <input type="text" id="new-type" placeholder="Loại từ (ví dụ: noun)" class="px-3 py-2 border rounded-lg text-sm">
+                </div>
+                <input type="text" id="new-meaning" placeholder="Nghĩa tiếng Việt (ví dụ: quả táo)" class="w-full px-3 py-2 border rounded-lg text-sm">
+                <input type="text" id="new-example" placeholder="Ví dụ câu (ví dụ: An apple a day...)" class="w-full px-3 py-2 border rounded-lg text-sm">
+                <button onclick="addVocabulary()" class="w-full bg-indigo-600 text-white py-2 rounded-lg text-sm font-semibold hover:bg-indigo-700">Thêm vào Unit</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK & App Logic -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, collection, doc, getDoc, setDoc, getDocs, updateDoc, addDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        // CẤU HÌNH FIREBASE CỦA BẠN (Thay thế bằng thông tin từ Firebase Console của bạn)
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_AUTH_DOMAIN",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_STORAGE_BUCKET",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        let currentUser = null;
+        let userRole = 'student';
+        let isRegistering = false;
+        
+        // Dữ liệu ứng dụng tạm thời trên client
+        window.appData = {
+            modules: [],
+            currentModuleId: null,
+            currentUnitId: null,
+            currentVocabs: [],
+            currentCardIndex: 0,
+            isFlipped: false,
+            quizData: [],
+            currentQuizIndex: 0,
+            quizScore: 0
+        };
+
+        // --- AUTH LOGIC ---
+        window.toggleAuthMode = function() {
+            isRegistering = !isRegistering;
+            document.getElementById('auth-title').innerText = isRegistering ? "Đăng Ký Tài Khoản" : "Đăng Nhập Hệ Thống";
+            document.getElementById('auth-btn').innerText = isRegistering ? "Đăng Ký" : "Đăng Nhập";
+            document.getElementById('auth-switch-text').innerText = isRegistering ? "Đã có tài khoản?" : "Chưa có tài khoản?";
+            document.getElementById('auth-switch-btn').innerText = isRegistering ? "Đăng nhập ngay" : "Đăng ký ngay";
+            document.getElementById('name-field').classList.toggle('hidden', !isRegistering);
+        }
+
+        window.handleAuth = async function(event) {
+            event.preventDefault();
+            const email = document.getElementById('input-email').value;
+            const password = document.getElementById('input-password').value;
+            const name = document.getElementById('input-name').value;
+
+            try {
+                if (isRegistering) {
+                    const res = await createUserWithEmailAndPassword(auth, email, password);
+                    await setDoc(doc(db, "users", res.user.uid), {
+                        uid: res.user.uid,
+                        email: email,
+                        name: name || email.split('@')[0],
+                        role: email.includes('admin') ? 'admin' : 'student',
+                        createdAt: new Date().toISOString()
+                    });
+                    alert("Đăng ký thành công!");
+                } else {
+                    await signInWithEmailAndPassword(auth, email, password);
+                }
+            } catch (error) {
+                alert("Lỗi: " + error.message);
+            }
+        }
+
+        window.handleLogout = () => signOut(auth);
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                currentUser = user;
+                const userDoc = await getDoc(doc(db, "users", user.uid));
+                if (userDoc.exists()) {
+                    userRole = userDoc.data().role || 'student';
+                    document.getElementById('welcome-user').innerText = `Xin chào, ${userDoc.data().name} (${userRole === 'admin' ? 'Giáo viên' : 'Học sinh'})`;
+                }
+                
+                document.getElementById('auth-nav').innerHTML = `
+                    ${userRole === 'admin' ? '<button onclick="router.goAdmin()" class="bg-indigo-700 px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-indigo-800">Quản trị</button>' : ''}
+                    <button onclick="handleLogout()" class="bg-red-500 px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-red-600">Đăng xuất</button>
+                `;
+                
+                document.getElementById('view-auth').classList.add('hidden');
+                router.goDashboard();
+                loadModules();
+            } else {
+                currentUser = null;
+                document.getElementById('auth-nav').innerHTML = '';
+                document.getElementById('view-dashboard').classList.add('hidden');
+                document.getElementById('view-study').classList.add('hidden');
+                document.getElementById('view-admin').classList.add('hidden');
+                document.getElementById('view-auth').classList.remove('hidden');
+            }
+        });
+
+        // --- LOAD DATA ---
+        async function loadModules() {
+            const querySnapshot = await getDocs(collection(db, "modules"));
+            window.appData.modules = [];
+            querySnapshot.forEach((docSnap) => {
+                window.appData.modules.push({ id: docSnap.id, ...docSnap.data() });
+            });
+            renderModules();
+        }
+
+        function renderModules() {
+            const container = document.getElementById('modules-container');
+            container.innerHTML = '';
+            
+            if (window.appData.modules.length === 0) {
+                container.innerHTML = `<p class="text-gray-500 col-span-full text-center py-8">Chưa có học phần nào. ${userRole === 'admin' ? 'Hãy bấm thêm học phần mới.' : 'Vui lòng chờ giáo viên cập nhật.'}</p>`;
+                return;
+            }
+
+            window.appData.modules.forEach(mod => {
+                let unitsHtml = mod.units ? mod.units.map(u => `
+                    <div class="flex justify-between items-center py-2 border-b last:border-0">
+                        <span class="text-sm font-medium text-gray-700">${u.title}</span>
+                        <div class="space-x-2">
+                            <button onclick="router.goStudy('${mod.id}', '${u.id}')" class="text-xs bg-indigo-50 text-indigo-600 px-3 py-1 rounded-md font-semibold hover:bg-indigo-100">Học ngay</button>
+                            ${userRole === 'admin' ? `<button onclick="openVocabModal('${mod.id}', '${u.id}')" class="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-md hover:bg-gray-200"><i class="fa-solid fa-gear"></i></button>` : ''}
+                        </div>
+                    </div>
+                `).join('') : '<p class="text-xs text-gray-400 py-2">Chưa có unit nào.</p>';
+
+                container.innerHTML += `
+                    <div class="bg-white rounded-xl shadow-md p-5 space-y-4 border">
+                        <div class="flex justify-between items-start">
+                            <h3 class="font-bold text-lg text-gray-800">${mod.title}</h3>
+                            ${userRole === 'admin' ? `<button onclick="addUnitToModule('${mod.id}')" class="text-xs bg-emerald-50 text-emerald-600 px-2.5 py-1 rounded-md font-semibold hover:bg-emerald-100">+ Thêm Unit</button>` : ''}
+                        </div>
+                        <div class="space-y-1">${unitsHtml}</div>
+                    </div>
+                `;
+            });
+
+            document.getElementById('admin-action-bar').classList.toggle('hidden', userRole !== 'admin');
+        }
+
+        // --- ADMIN FUNCTIONS ---
+        window.openModuleModal = async function() {
+            const title = prompt("Nhập tên học phần mới (Ví dụ: IELTS Vocabulary):");
+            if (!title) return;
+            await addDoc(collection(db, "modules"), { title, units: [] });
+            loadModules();
+        }
+
+        window.addUnitToModule = async function(moduleId) {
+            const title = prompt("Nhập tên Unit mới (Ví dụ: Unit 1: Environment):");
+            if (!title) return;
+            const mod = window.appData.modules.find(m => m.id === moduleId);
+            const newUnit = { id: 'u_' + Date.now(), title, vocabularies: [] };
+            mod.units = mod.units ? [...mod.units, newUnit] : [newUnit];
+            
+            await setDoc(doc(db, "modules", moduleId), { title: mod.title, units: mod.units });
+            loadModules();
+        }
+
+        let editingModuleId = null;
+        let editingUnitId = null;
+        window.openVocabModal = function(moduleId, unitId) {
+            editingModuleId = moduleId;
+            editingUnitId = unitId;
+            const mod = window.appData.modules.find(m => m.id === moduleId);
+            const unit = mod.units.find(u => u.id === unitId);
+            
+            document.getElementById('modal-title').innerText = `Quản lý từ vựng: ${unit.title}`;
+            renderVocabAdminList(unit.vocabularies || []);
+            document.getElementById('modal-vocab').classList.remove('hidden');
+            document.getElementById('modal-vocab').classList.add('flex');
+        }
+
+        window.closeVocabModal = function() {
+            document.getElementById('modal-vocab').classList.remove('flex');
+            document.getElementById('modal-vocab').classList.add('hidden');
+            loadModules();
+        }
+
+        function renderVocabAdminList(vocabList) {
+            const container = document.getElementById('vocab-list-admin');
+            container.innerHTML = vocabList.length === 0 ? '<p class="text-xs text-gray-400">Chưa có từ vựng nào trong unit này.</p>' : '';
+            vocabList.forEach((v, index) => {
+                container.innerHTML += `
+                    <div class="flex justify-between items-center bg-gray-50 p-2.5 rounded-lg text-sm border">
+                        <div><strong>${v.word}</strong> <span class="text-gray-400 italic">(${v.type})</span>: ${v.meaning}</div>
+                        <button onclick="deleteVocab(${index})" class="text-red-500 hover:text-red-700 text-xs font-semibold">Xóa</button>
+                    </div>
+                `;
+            });
+        }
+
+        window.addVocabulary = async function() {
+            const word = document.getElementById('new-word').value.trim();
+            const type = document.getElementById('new-type').value.trim();
+            const meaning = document.getElementById('new-meaning').value.trim();
+            const example = document.getElementById('new-example').value.trim();
+
+            if (!word || !meaning) {
+                alert("Vui lòng điền từ vựng và nghĩa!");
+                return;
+            }
+
+            const mod = window.appData.modules.find(m => m.id === editingModuleId);
+            const unit = mod.units.find(u => u.id === editingUnitId);
+            if (!unit.vocabularies) unit.vocabularies = [];
+            
+            unit.vocabularies.push({ word, type, meaning, example });
+            
+            await setDoc(doc(db, "modules", editingModuleId), { title: mod.title, units: mod.units });
+            
+            document.getElementById('new-word').value = '';
+            document.getElementById('new-type').value = '';
+            document.getElementById('new-meaning').value = '';
+            document.getElementById('new-example').value = '';
+            renderVocabAdminList(unit.vocabularies);
+        }
+
+        window.deleteVocab = async function(index) {
+            const mod = window.appData.modules.find(m => m.id === editingModuleId);
+            const unit = mod.units.find(u => u.id === editingUnitId);
+            unit.vocabularies.splice(index, 1);
+            
+            await setDoc(doc(db, "modules", editingModuleId), { title: mod.title, units: mod.units });
+            renderVocabAdminList(unit.vocabularies);
+        }
+
+        // --- ROUTER & STUDY LOGIC ---
+        window.router = {
+            goHome: () => { if(currentUser) router.goDashboard(); },
+            goDashboard: () => {
+                document.getElementById('view-dashboard').classList.remove('hidden');
+                document.getElementById('view-study').classList.add('hidden');
+                document.getElementById('view-admin').classList.add('hidden');
+            },
+            goStudy: (moduleId, unitId) => {
+                const mod = window.appData.modules.find(m => m.id === moduleId);
+                const unit = mod.units.find(u => u.id === unitId);
+                if (!unit.vocabularies || unit.vocabularies.length === 0) {
+                    alert("Unit này chưa có từ vựng nào!");
+                    return;
+                }
+                window.appData.currentVocabs = unit.vocabularies;
+                window.appData.currentCardIndex = 0;
+                window.appData.currentUnitTitle = unit.title;
+                window.appData.currentUnitId = unitId;
+                
+                document.getElementById('study-title').innerText = unit.title;
+                document.getElementById('view-dashboard').classList.add('hidden');
+                document.getElementById('view-study').classList.remove('hidden');
+                switchStudyMode('flashcard');
+                updateFlashcard();
+            },
+            goAdmin: async () => {
+                document.getElementById('view-dashboard').classList.add('hidden');
+                document.getElementById('view-study').classList.add('hidden');
+                document.getElementById('view-admin').classList.remove('hidden');
+                
+                // Lấy tiến độ học sinh
+                const progressSnap = await getDocs(collection(db, "progress"));
+                const tableBody = document.getElementById('student-progress-table');
+                tableBody.innerHTML = '';
+                
+                progressSnap.forEach(docSnap => {
+                    const p = docSnap.data();
+                    tableBody.innerHTML += `
+                        <tr class="hover:bg-gray-50">
+                            <td class="p-3 font-medium">${p.userName || 'Học sinh'}</td>
+                            <td class="p-3 text-gray-500">${p.email}</td>
+                            <td class="p-3">${p.unitTitle || 'N/A'}</td>
+                            <td class="p-3 font-semibold text-indigo-600">${p.score || 0} điểm</td>
+                            <td class="p-3 text-gray-400 text-xs">${new Date(p.timestamp).toLocaleString()}</td>
+                        </tr>
+                    `;
+                });
+            }
+        };
+
+        // --- FLASHCARD & TTS ---
+        window.switchStudyMode = function(mode) {
+            const isFc = mode === 'flashcard';
+            document.getElementById('mode-flashcard').classList.toggle('hidden', !isFc);
+            document.getElementById('mode-quiz').classList.toggle('hidden', isFc);
+            document.getElementById('tab-fc').className = `px-3 py-1.5 rounded-lg text-sm font-medium ${isFc ? 'bg-indigo-600 text-white' : 'bg-gray-200 text-gray-700'}`;
+            document.getElementById('tab-qz').className = `px-3 py-1.5 rounded-lg text-sm font-medium ${!isFc ? 'bg-indigo-600 text-white' : 'bg-gray-200 text-gray-700'}`;
+            if (!isFc) initQuiz();
+        }
+
+        window.updateFlashcard = function() {
+            const v = window.appData.currentVocabs[window.appData.currentCardIndex];
+            document.getElementById('fc-word').innerText = v.word;
+            document.getElementById('fc-type').innerText = `(${v.type || 'noun'})`;
+            document.getElementById('fc-meaning').innerText = v.meaning;
+            document.getElementById('fc-example').innerText = v.example ? `"${v.example}"` : '';
+            document.getElementById('fc-counter').innerText = `${window.appData.currentCardIndex + 1} / ${window.appData.currentVocabs.length}`;
+            window.appData.isFlipped = false;
+            document.getElementById('flashcard-inner').classList.remove('rotate-y-180');
+        }
+
+        window.flipCard = function() {
+            window.appData.isFlipped = !window.appData.isFlipped;
+            document.getElementById('flashcard-inner').classList.toggle('rotate-y-180', window.appData.isFlipped);
+        }
+
+        window.nextCard = function() {
+            if (window.appData.currentCardIndex < window.appData.currentVocabs.length - 1) {
+                window.appData.currentCardIndex++;
+                updateFlashcard();
+            }
+        }
+
+        window.prevCard = function() {
+            if (window.appData.currentCardIndex > 0) {
+                window.appData.currentCardIndex--;
+                updateFlashcard();
+            }
+        }
+
+        window.speakCurrentWord = function() {
+            const v = window.appData.currentVocabs[window.appData.currentCardIndex];
+            const utterance = new SpeechSynthesisUtterance(v.word);
+            utterance.lang = 'en-US';
+            window.speechSynthesis.speak(utterance);
+        }
+
+        // --- QUIZ LOGIC & PROGRESS SAVING ---
+        function initQuiz() {
+            window.appData.quizScore = 0;
+            window.appData.currentQuizIndex = 0;
+            // Xáo trộn từ vựng làm câu hỏi
+            window.appData.quizData = [...window.appData.currentVocabs].sort(() => 0.5 - Math.random());
+            document.getElementById('quiz-result-box').classList.add('hidden');
+            document.getElementById('quiz-question-box').classList.remove('hidden');
+            loadQuizQuestion();
+        }
+
+        function loadQuizQuestion() {
+            if (window.appData.currentQuizIndex >= window.appData.quizData.length) {
+                finishQuiz();
+                return;
+            }
+            const current = window.appData.quizData[window.appData.currentQuizIndex];
+            document.getElementById('quiz-progress').innerText = `Câu hỏi ${window.appData.currentQuizIndex + 1}/${window.appData.quizData.length}`;
+            document.getElementById('quiz-score').innerText = `Điểm: ${window.appData.quizScore}`;
+            document.getElementById('quiz-q').innerText = `Nghĩa của từ "${current.word}" là gì?`;
+
+            // Tạo đáp án nhiễu
+            let options = [current.meaning];
+            while (options.length < 4 && options.length < window.appData.currentVocabs.length) {
+                let randomVocab = window.appData.currentVocabs[Math.floor(Math.random() * window.appData.currentVocabs.length)];
+                if (!options.includes(randomVocab.meaning)) options.push(randomVocab.meaning);
+            }
+            options.sort(() => 0.5 - Math.random());
+
+            const optContainer = document.getElementById('quiz-options');
+            optContainer.innerHTML = '';
+            options.forEach(opt => {
+                optContainer.innerHTML += `
+                    <button onclick="checkAnswer('${opt}', '${current.meaning.replace(/'/g, "\\'")}')" class="w-full text-left p-3 border rounded-lg hover:bg-indigo-50 hover:border-indigo-500 font-medium transition">${opt}</button>
+                `;
+            });
+        }
+
+        window.checkAnswer = function(selected, correct) {
+            if (selected === correct) {
+                window.appData.quizScore += 10;
+            }
+            window.appData.currentQuizIndex++;
+            loadQuizQuestion();
+        }
+
+        async function finishQuiz() {
+            document.getElementById('quiz-question-box').classList.add('hidden');
+            document.getElementById('quiz-result-box').classList.remove('hidden');
+            document.getElementById('quiz-final-score').innerText = `Tổng điểm của bạn: ${window.appData.quizScore} / ${window.appData.quizData.length * 10}`;
+
+            // Lưu tiến độ lên Firebase Firestore cho giáo viên theo dõi
+            if (currentUser && userRole === 'student') {
+                try {
+                    const userDoc = await getDoc(doc(db, "users", currentUser.uid));
+                    const userName = userDoc.exists() ? userDoc.data().name : currentUser.email;
+
+                    await setDoc(doc(db, "progress", `${currentUser.uid}_${window.appData.currentUnitId}`), {
+                        userId: currentUser.uid,
+                        userName: userName,
+                        email: currentUser.email,
+                        unitId: window.appData.currentUnitId,
+                        unitTitle: window.appData.currentUnitTitle,
+                        score: window.appData.quizScore,
+                        timestamp: new Date().toISOString()
+                    });
+                } catch (e) {
+                    console.error("Lỗi lưu tiến độ:", e);
+                }
+            }
+        }
+
+        window.restartQuiz = initQuiz;
+    </script>
+</body>
+</html>
