@@ -178,22 +178,47 @@
     <!-- MODAL QUẢN TRỊ UNIT & VOCAB -->
     <div id="modal-vocab" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-50">
         <div class="bg-white rounded-2xl max-w-2xl w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
-            <div class="flex justify-between items-center border-pb">
+            <div class="flex justify-between items-center border-b pb-3">
                 <h3 id="modal-title" class="text-xl font-bold">Quản lý Từ vựng trong Unit</h3>
                 <button onclick="closeVocabModal()" class="text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark text-xl"></i></button>
             </div>
-            <div id="vocab-list-admin" class="space-y-3">
+            
+            <!-- Danh sách từ hiện tại -->
+            <div id="vocab-list-admin" class="space-y-3 max-h-60 overflow-y-auto pr-1">
                 <!-- Danh sách từ trong unit -->
             </div>
+
+            <!-- Khung thêm từ vựng (Có chuyển đổi Thêm đơn lẻ / Thêm nhanh hàng loạt) -->
             <div class="border-t pt-4 space-y-3">
-                <h4 class="font-semibold text-sm text-gray-700">Thêm từ vựng mới</h4>
-                <div class="grid grid-cols-2 gap-3">
-                    <input type="text" id="new-word" placeholder="Từ vựng (ví dụ: apple)" class="px-3 py-2 border rounded-lg text-sm">
-                    <input type="text" id="new-type" placeholder="Loại từ (ví dụ: noun)" class="px-3 py-2 border rounded-lg text-sm">
+                <div class="flex justify-between items-center">
+                    <h4 class="font-semibold text-sm text-gray-700">Thêm từ vựng mới</h4>
+                    <div class="space-x-1">
+                        <button onclick="switchAddMode('single')" id="btn-add-single" class="text-xs px-2.5 py-1 bg-indigo-600 text-white rounded-md font-medium">Thêm từng từ</button>
+                        <button onclick="switchAddMode('bulk')" id="btn-add-bulk" class="text-xs px-2.5 py-1 bg-gray-200 text-gray-700 rounded-md font-medium">Thêm nhanh (Hàng loạt)</button>
+                    </div>
                 </div>
-                <input type="text" id="new-meaning" placeholder="Nghĩa tiếng Việt (ví dụ: quả táo)" class="w-full px-3 py-2 border rounded-lg text-sm">
-                <input type="text" id="new-example" placeholder="Ví dụ câu (ví dụ: An apple a day...)" class="w-full px-3 py-2 border rounded-lg text-sm">
-                <button onclick="addVocabulary()" class="w-full bg-indigo-600 text-white py-2 rounded-lg text-sm font-semibold hover:bg-indigo-700">Thêm vào Unit</button>
+
+                <!-- Form thêm từng từ -->
+                <div id="form-single-vocab" class="space-y-3">
+                    <div class="grid grid-cols-2 gap-3">
+                        <input type="text" id="new-word" placeholder="Từ vựng (ví dụ: apple)" class="px-3 py-2 border rounded-lg text-sm">
+                        <input type="text" id="new-type" placeholder="Loại từ (ví dụ: noun)" class="px-3 py-2 border rounded-lg text-sm">
+                    </div>
+                    <input type="text" id="new-meaning" placeholder="Nghĩa tiếng Việt (ví dụ: quả táo)" class="w-full px-3 py-2 border rounded-lg text-sm">
+                    <input type="text" id="new-example" placeholder="Ví dụ câu (ví dụ: An apple a day...)" class="w-full px-3 py-2 border rounded-lg text-sm">
+                    <button onclick="addVocabulary()" class="w-full bg-indigo-600 text-white py-2 rounded-lg text-sm font-semibold hover:bg-indigo-700">Thêm vào Unit</button>
+                </div>
+
+                <!-- Form thêm nhanh hàng loạt -->
+                <div id="form-bulk-vocab" class="hidden space-y-3">
+                    <div class="bg-indigo-50 p-3 rounded-lg text-xs text-indigo-800 space-y-1">
+                        <p class="font-semibold">💡 Định dạng thêm nhanh (Mỗi dòng 1 từ, ngăn cách bởi dấu |):</p>
+                        <p class="font-mono text-gray-700 bg-white p-1.5 rounded border">từ_vựng | loại_từ | nghĩa_tiếng_việt | câu_ví_dụ</p>
+                        <p class="text-gray-500 italic">Ví dụ: apple | noun | quả táo | An apple a day keeps the doctor away.</p>
+                    </div>
+                    <textarea id="bulk-vocab-text" rows="5" placeholder="apple | noun | quả táo | An apple a day...&#10;book | noun | sách | I love reading books." class="w-full px-3 py-2 border rounded-lg text-sm font-mono"></textarea>
+                    <button onclick="bulkAddVocabulary()" class="w-full bg-emerald-600 text-white py-2 rounded-lg text-sm font-semibold hover:bg-emerald-700">Import hàng loạt vào Unit</button>
+                </div>
             </div>
         </div>
     </div>
@@ -204,15 +229,14 @@
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getFirestore, collection, doc, getDoc, setDoc, getDocs, updateDoc, addDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // CẤU HÌNH FIREBASE CỦA BẠN (Thay thế bằng thông tin từ Firebase Console của bạn)
+        // CẤU HÌNH FIREBASE CỦA BẠN
         const firebaseConfig = {
-            apiKey: "AIzaSyDbCd7MqLKYX3Uc1aG6J2ZP-rV0d861f0M",
-            authDomain: "vocab-app-2d25d.firebaseapp.com",
-            projectId: "vocab-app-2d25d",
-            storageBucket: "vocab-app-2d25d.firebasestorage.app",
-            messagingSenderId: "833098400362",
-            appId: "1:833098400362:web:f954d6318208bd337b0013",
-            measurementId: "G-VB0S315G3"
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_AUTH_DOMAIN",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_STORAGE_BUCKET",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
         };
 
         const app = initializeApp(firebaseConfig);
@@ -223,7 +247,6 @@
         let userRole = 'student';
         let isRegistering = false;
         
-        // Dữ liệu ứng dụng tạm thời trên client
         window.appData = {
             modules: [],
             currentModuleId: null,
@@ -373,6 +396,7 @@
             
             document.getElementById('modal-title').innerText = `Quản lý từ vựng: ${unit.title}`;
             renderVocabAdminList(unit.vocabularies || []);
+            switchAddMode('single'); // Reset về tab thêm đơn lẻ
             document.getElementById('modal-vocab').classList.remove('hidden');
             document.getElementById('modal-vocab').classList.add('flex');
         }
@@ -383,9 +407,17 @@
             loadModules();
         }
 
+        window.switchAddMode = function(mode) {
+            const isSingle = mode === 'single';
+            document.getElementById('form-single-vocab').classList.toggle('hidden', !isSingle);
+            document.getElementById('form-bulk-vocab').classList.toggle('hidden', isSingle);
+            document.getElementById('btn-add-single').className = `text-xs px-2.5 py-1 rounded-md font-medium ${isSingle ? 'bg-indigo-600 text-white' : 'bg-gray-200 text-gray-700'}`;
+            document.getElementById('btn-add-bulk').className = `text-xs px-2.5 py-1 rounded-md font-medium ${!isSingle ? 'bg-indigo-600 text-white' : 'bg-gray-200 text-gray-700'}`;
+        }
+
         function renderVocabAdminList(vocabList) {
             const container = document.getElementById('vocab-list-admin');
-            container.innerHTML = vocabList.length === 0 ? '<p class="text-xs text-gray-400">Chưa có từ vựng nào trong unit này.</p>' : '';
+            container.innerHTML = vocabList.length === 0 ? '<p class="text-xs text-gray-400 text-center py-2">Chưa có từ vựng nào trong unit này.</p>' : '';
             vocabList.forEach((v, index) => {
                 container.innerHTML += `
                     <div class="flex justify-between items-center bg-gray-50 p-2.5 rounded-lg text-sm border">
@@ -420,6 +452,44 @@
             document.getElementById('new-meaning').value = '';
             document.getElementById('new-example').value = '';
             renderVocabAdminList(unit.vocabularies);
+        }
+
+        window.bulkAddVocabulary = async function() {
+            const rawText = document.getElementById('bulk-vocab-text').value.trim();
+            if (!rawText) {
+                alert("Vui lòng nhập danh sách từ vựng!");
+                return;
+            }
+
+            const lines = rawText.split('\n');
+            let addedCount = 0;
+
+            const mod = window.appData.modules.find(m => m.id === editingModuleId);
+            const unit = mod.units.find(u => u.id === editingUnitId);
+            if (!unit.vocabularies) unit.vocabularies = [];
+
+            lines.forEach(line => {
+                const parts = line.split('|').map(p => p.trim());
+                if (parts.length >= 3) {
+                    unit.vocabularies.push({
+                        word: parts[0],
+                        type: parts[1] || 'noun',
+                        meaning: parts[2],
+                        example: parts[3] || ''
+                    });
+                    addedCount++;
+                }
+            });
+
+            if (addedCount === 0) {
+                alert("Không có dòng nào đúng định dạng! Vui lòng kiểm tra lại dấu |");
+                return;
+            }
+
+            await setDoc(doc(db, "modules", editingModuleId), { title: mod.title, units: mod.units });
+            document.getElementById('bulk-vocab-text').value = '';
+            renderVocabAdminList(unit.vocabularies);
+            alert(`Đã thêm thành công ${addedCount} từ vựng vào Unit!`);
         }
 
         window.deleteVocab = async function(index) {
@@ -462,7 +532,6 @@
                 document.getElementById('view-study').classList.add('hidden');
                 document.getElementById('view-admin').classList.remove('hidden');
                 
-                // Lấy tiến độ học sinh
                 const progressSnap = await getDocs(collection(db, "progress"));
                 const tableBody = document.getElementById('student-progress-table');
                 tableBody.innerHTML = '';
@@ -533,7 +602,6 @@
         function initQuiz() {
             window.appData.quizScore = 0;
             window.appData.currentQuizIndex = 0;
-            // Xáo trộn từ vựng làm câu hỏi
             window.appData.quizData = [...window.appData.currentVocabs].sort(() => 0.5 - Math.random());
             document.getElementById('quiz-result-box').classList.add('hidden');
             document.getElementById('quiz-question-box').classList.remove('hidden');
@@ -550,7 +618,6 @@
             document.getElementById('quiz-score').innerText = `Điểm: ${window.appData.quizScore}`;
             document.getElementById('quiz-q').innerText = `Nghĩa của từ "${current.word}" là gì?`;
 
-            // Tạo đáp án nhiễu
             let options = [current.meaning];
             while (options.length < 4 && options.length < window.appData.currentVocabs.length) {
                 let randomVocab = window.appData.currentVocabs[Math.floor(Math.random() * window.appData.currentVocabs.length)];
@@ -580,7 +647,6 @@
             document.getElementById('quiz-result-box').classList.remove('hidden');
             document.getElementById('quiz-final-score').innerText = `Tổng điểm của bạn: ${window.appData.quizScore} / ${window.appData.quizData.length * 10}`;
 
-            // Lưu tiến độ lên Firebase Firestore cho giáo viên theo dõi
             if (currentUser && userRole === 'student') {
                 try {
                     const userDoc = await getDoc(doc(db, "users", currentUser.uid));
